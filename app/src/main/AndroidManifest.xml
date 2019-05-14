@@ -3,6 +3,10 @@
     package="com.procentplus">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.hardware.camera" />
+    <uses-permission android:name="android.hardware.camera.autofocus" />
+
 
     <application
         android:allowBackup="true"
@@ -37,6 +41,8 @@
         <activity android:name="com.procentplus.activities.ConfirmEmailActivity"
             android:screenOrientation="portrait"/>
         <activity android:name="com.procentplus.activities.PartnerActivity"
+                  android:screenOrientation="portrait"/>
+        <activity android:name="com.procentplus.activities.QrCodeScannerActivity"
                   android:screenOrientation="portrait"/>
     </application>
 

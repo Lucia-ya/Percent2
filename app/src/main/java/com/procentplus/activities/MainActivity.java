@@ -66,29 +66,27 @@ public class MainActivity extends FragmentActivity {
 
         Log.d("Main Activity", "onCreate: readIsPartner: " + prefConfig.readIsPartner() + ", readLoginStatus: " +  prefConfig.readLoginStatus());
 
-        // if user isn't logged in
-        if (!prefConfig.readLoginStatus()) {
-            new android.os.Handler().postDelayed(
-                    new Runnable() {
-                        public void run() {
-
-                                Log.d("Main Activity", "readIsPartner - else - " + prefConfig.readIsPartner());
-                                Intent auth_intent = new Intent(MainActivity.this, AuthActivity.class);
+        new android.os.Handler().postDelayed(
+                new Runnable() {
+                    public void run() {
+                        // if user isn't logged in
+                        if (!prefConfig.readLoginStatus()) {
+                            Log.d("Main Activity", "readIsPartner - else - " + prefConfig.readIsPartner());
+                            Intent auth_intent = new Intent(MainActivity.this, AuthActivity.class);
+                            startActivity(auth_intent);
+                            finish();
+                        }
+                        // if user is partner
+                        else {
+                            if (prefConfig.readIsPartner()) {
+                                Log.d("Main Activity", "readIsPartner - if - " + prefConfig.readIsPartner());
+                                Intent auth_intent = new Intent(MainActivity.this, PartnerActivity.class);
                                 startActivity(auth_intent);
                                 finish();
+                            }
                         }
-                    }, 1800);
-        } else {
-            if (prefConfig.readIsPartner()) {
-                Log.d("Main Activity", "readIsPartner - if - " + prefConfig.readIsPartner());
-                Intent auth_intent = new Intent(MainActivity.this, PartnerActivity.class);
-                startActivity(auth_intent);
-                finish();
-            }
-        }
-
-
-
+                    }
+                }, 1800);
 
         if (getIntent().getIntExtra("tab_id", -1) != -1) {
             tabPosition = getIntent().getExtras().getInt("tab_id");
