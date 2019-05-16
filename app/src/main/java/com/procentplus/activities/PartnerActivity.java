@@ -10,10 +10,21 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+import com.procentplus.ProgressDialog.DialogConfig;
 import com.procentplus.R;
 import com.procentplus.retrofit.RetrofitClient;
 import com.procentplus.retrofit.interfaces.ILogout;
+import com.procentplus.retrofit.interfaces.ISaleRecord;
 import com.procentplus.retrofit.models.CategoriesResponse;
+import com.procentplus.retrofit.models.SaleRecord;
+import com.procentplus.retrofit.models.SaleRecordRequest;
+import com.procentplus.retrofit.models.SaleRecordResponse;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -39,8 +50,18 @@ public class PartnerActivity extends AppCompatActivity implements View.OnClickLi
     ImageView logout_btn;
 
     private ILogout iLogout;
+    private ISaleRecord iSaleRecord;
     private Retrofit retrofit;
-    private String sum;
+
+    //dialog for logout and send
+    private DialogConfig sendDialog;
+    private DialogConfig dialog;
+
+
+    private Double sum;
+    private String scanData;
+    private int user_id;
+    private int point_of_sale;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -50,9 +71,36 @@ public class PartnerActivity extends AppCompatActivity implements View.OnClickLi
 
         retrofit = RetrofitClient.getInstance();
 
+        //add message for logout dialog
+        dialog = new DialogConfig(this, "Выход...");
+        sendDialog = new DialogConfig(this, "Отправка транзакции...");
+
         scan.setOnClickListener(this);
         send.setOnClickListener(this);
         logout_btn.setOnClickListener(this);
+
+        //check scan data
+        if (getIntent().getStringExtra("qr_data") != null) {
+            scanData = getIntent().getStringExtra("qr_data");
+            parserData(scanData);
+        }
+    }
+
+    private void parserData(String data) {
+        try {
+            JsonParser parser = new JsonParser();
+            JsonObject object = parser.parse(data).getAsJsonObject();
+            user_id = object.get("user_id").getAsInt();
+            point_of_sale = object.get("point_of_sale_id").getAsInt();
+        } catch (JsonSyntaxException e) {
+            e.printStackTrace();
+            scanData = null;
+            MainActivity.prefConfig.displayToast("Не корректный QR-код, просканируйте еще раз");
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+            scanData = null;
+            MainActivity.prefConfig.displayToast("Не корректный QR-код, просканируйте еще раз");
+        }
     }
 
     @Override
@@ -62,20 +110,56 @@ public class PartnerActivity extends AppCompatActivity implements View.OnClickLi
                 Log.d("Partner Activity", "readIsPartner - if - " + prefConfig.readIsPartner());
                 Intent auth_intent = new Intent(PartnerActivity.this, QrCodeScannerActivity.class);
                 startActivity(auth_intent);
-                finish();
                 break;
             case R.id.partner_cab_send:
-                sum = sumText.getText().toString().trim();
-                if (!sum.isEmpty()) {
-
+                sum = Double.valueOf(sumText.getText().toString().trim());
+                if (sum != 0|| scanData != null) {
+                    sendDialog.showDialog();
+                    send();
                 } else {
-                    prefConfig.displayToast("Введите сумму!");
+                    prefConfig.displayToast("Введите сумму и просканируйте QR-код!");
                 }
                 break;
             case R.id.partner_cab_logout:
+                dialog.showDialog();
                 logout();
                 break;
         }
+    }
+
+    private void send() {
+        Log.d("Partner activity", "Send() : sum = " + sum + ",  user_id = " + user_id +
+                ", point_of_sale = " + point_of_sale +
+                ", partner_id = " + MainActivity.prefConfig.readPartnerId());
+        iSaleRecord = retrofit.create(ISaleRecord.class);
+
+        Call<SaleRecordResponse> saleRecordResponseCall = iSaleRecord.getAccountData(MainActivity.prefConfig.readToken(), new SaleRecordRequest
+                (new SaleRecord(Double.valueOf(sum), new SimpleDateFormat("yyyyMMdd_HHmmss").format
+                        (Calendar.getInstance().getTime()), point_of_sale, user_id, MainActivity.prefConfig.readPartnerId())));
+        saleRecordResponseCall.enqueue(new Callback<SaleRecordResponse>() {
+            @Override
+            public void onResponse(Call<SaleRecordResponse> call, Response<SaleRecordResponse> response) {
+                sendDialog.dismissDialog();
+                int statusCode = response.code();
+                Log.d("LOGGER PartnerActivity", "Send - statusCode: " + statusCode);
+                if (statusCode == 200) {
+
+                    if (response.body().getSuccess()) {
+                        MainActivity.prefConfig.displayToast("Успешно!\n ID транзакции: " + response.body().getSale_record().getTransaction_id());
+                    } else {
+                        MainActivity.prefConfig.displayToast("Не успешно!\n ID транзакции: " + response.body().getSale_record().getTransaction_id());
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<SaleRecordResponse> call, Throwable t) {
+                sendDialog.dismissDialog();
+                MainActivity.prefConfig.displayToast("Произошла ошибка при отправке транзакции.");
+
+            }
+        });
+
     }
 
     private void logout() {
@@ -85,6 +169,7 @@ public class PartnerActivity extends AppCompatActivity implements View.OnClickLi
         call.enqueue(new Callback<CategoriesResponse>() {
             @Override
             public void onResponse(Call<CategoriesResponse> call, Response<CategoriesResponse> response) {
+                dialog.dismissDialog();
                 int statusCode = response.code();
                 Log.d("LOGGER Logout", "statusCode: " + statusCode);
                 if (statusCode == 200 || statusCode == 204) {
@@ -97,13 +182,12 @@ public class PartnerActivity extends AppCompatActivity implements View.OnClickLi
 
             @Override
             public void onFailure(Call<CategoriesResponse> call, Throwable t) {
+                dialog.dismissDialog();
                 prefConfig.displayToast("Произошла ошибка при попытке выхода из профиля\n" + t.getStackTrace());
             }
         });
 
     }
-
-
 
 
 }

@@ -187,6 +187,7 @@ public class AuthActivity extends AppCompatActivity implements View.OnClickListe
                     MainActivity.prefConfig.writeToken(token);
                     MainActivity.prefConfig.writeId(response.body().getUser().getId());
                     MainActivity.prefConfig.writeIsPartner(isPartner);
+                    MainActivity.prefConfig.writePartnerId(response.body().getPartner().getId());
 
 
                     Intent intent = new Intent(AuthActivity.this, PartnerActivity.class);

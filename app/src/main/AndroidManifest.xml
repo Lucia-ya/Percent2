@@ -43,7 +43,8 @@
         <activity android:name="com.procentplus.activities.PartnerActivity"
                   android:screenOrientation="portrait"/>
         <activity android:name="com.procentplus.activities.QrCodeScannerActivity"
-                  android:screenOrientation="portrait"/>
+                  android:screenOrientation="portrait"
+            android:parentActivityName=".activities.PartnerActivity"/>
     </application>
 
 </manifest>

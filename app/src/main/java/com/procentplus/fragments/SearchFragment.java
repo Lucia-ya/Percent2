@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.procentplus.ProgressDialog.DialogConfig;
 import com.procentplus.R;
 import com.procentplus.activities.AuthActivity;
 import com.procentplus.activities.MainActivity;
@@ -36,6 +37,7 @@ public class SearchFragment extends Fragment {
     TabLayout searchTabLayout;
     SearchPagerAdapter searchPagerAdapter;
     ImageView logout_btn;
+    DialogConfig dialog;
 
     private Retrofit retrofit;
     private ILogout iLogout;
@@ -45,6 +47,8 @@ public class SearchFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_search, null);
         ButterKnife.bind(this, view);
+
+        dialog = new DialogConfig(getActivity(), "Выход...");
 
         // init api
         retrofit = RetrofitClient.getInstance();
@@ -59,6 +63,7 @@ public class SearchFragment extends Fragment {
         logout_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                dialog.showDialog();
                 logout();
             }
         });
@@ -76,6 +81,7 @@ public class SearchFragment extends Fragment {
             @Override
             public void onResponse(Call<CategoriesResponse> call, Response<CategoriesResponse> response) {
                 int statusCode = response.code();
+                dialog.dismissDialog();
                 Log.d("LOGGER Logout", "statusCode: " + statusCode);
                 if (statusCode == 200 || statusCode == 204) {
                     MainActivity.prefConfig.writeLoginStatus(false);
@@ -87,6 +93,7 @@ public class SearchFragment extends Fragment {
 
             @Override
             public void onFailure(Call<CategoriesResponse> call, Throwable t) {
+                dialog.dismissDialog();
                 MainActivity.prefConfig.displayToast("Произошла ошибка при попытке выхода из профиля");
             }
         });

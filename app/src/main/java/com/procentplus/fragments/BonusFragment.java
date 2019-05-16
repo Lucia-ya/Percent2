@@ -20,6 +20,7 @@ import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.procentplus.ProgressDialog.DialogConfig;
 import com.procentplus.R;
 import com.procentplus.activities.LegendActivity;
 import com.procentplus.activities.MainActivity;
@@ -44,6 +45,8 @@ public class BonusFragment extends Fragment implements View.OnClickListener {
     private String object_name = "";
     private int object_id = -1;
     private int object_point_id;
+
+    private DialogConfig mDialogConfig;
 
     private IBonus iBonus;
     private IBonusQR iBonusQR;
@@ -81,6 +84,8 @@ public class BonusFragment extends Fragment implements View.OnClickListener {
         // init api
         retrofit = RetrofitClient.getInstance();
 
+        mDialogConfig = new DialogConfig(getActivity(), "Загрузка...");
+
         final View view = inflater.inflate(R.layout.fragment_bonus, null);
 
         //setting time
@@ -102,6 +107,8 @@ public class BonusFragment extends Fragment implements View.OnClickListener {
         how_to_get_percent.setPaintFlags(how_to_get_percent.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
         how_to_get_percent.setOnClickListener(this);
 
+
+        mDialogConfig.showDialog();
         if (object_point_id == 0) {
             getBonus(view);
         } else {
@@ -137,6 +144,7 @@ public class BonusFragment extends Fragment implements View.OnClickListener {
             @SuppressLint("SetTextI18n")
             @Override
             public void onResponse(Call<Bonus> call, Response<Bonus> response) {
+                mDialogConfig.dismissDialog();
                 int statusCode = response.code();
                 Log.d("BONUS_FRAGMENT: ", "onCreate: object_name = " + object_name + ", object_id" + object_id +
                         ", object_point_id " + object_point_id);
@@ -144,6 +152,9 @@ public class BonusFragment extends Fragment implements View.OnClickListener {
                 if (statusCode == 200) {
                     TextView tv_bonus_text = view.findViewById(R.id.tv_bonus_text);
                     TextView current_user_bonus = view.findViewById(R.id.current_user_bonus);
+                    ImageView qr_image = view.findViewById(R.id.bonus_barcode_image);
+                    qr_image.setImageResource(R.drawable.barcode);
+                    qr_image.setVisibility(View.VISIBLE);
 
                     String percent_full_num = response.body().getBonus().getPercent();
                     switch (percent_full_num) {
@@ -163,7 +174,7 @@ public class BonusFragment extends Fragment implements View.OnClickListener {
                             percent+
                             "% вам необходимо накопить еще " +
                             (response.body().getBonus().getSumTo()-response.body().getBonus().getSumFrom()) +
-                            " руб. По данным на " +
+                            " руб. \n По данным на " +
                             getDate()
                     );
                 }
@@ -171,6 +182,7 @@ public class BonusFragment extends Fragment implements View.OnClickListener {
 
             @Override
             public void onFailure(Call<Bonus> call, Throwable t) {
+                mDialogConfig.dismissDialog();
                 MainActivity.prefConfig.displayToast("Произошла ошибка при получении бонусов");
             }
         });
@@ -185,6 +197,7 @@ public class BonusFragment extends Fragment implements View.OnClickListener {
         bonusQRCall.enqueue(new Callback<BonusQR>() {
             @Override
             public void onResponse(Call<BonusQR> call, Response<BonusQR> response) {
+                mDialogConfig.dismissDialog();
                 int statusCode = response.code();
                 Log.d("BONUSQR_FRAGMENT: ", "onCreate: object_name = " + object_name + ", object_id" + object_id +
                         ", object_point_id " + object_point_id);
@@ -193,6 +206,7 @@ public class BonusFragment extends Fragment implements View.OnClickListener {
                     TextView tv_bonus_text = view.findViewById(R.id.tv_bonus_text);
                     TextView current_user_bonus = view.findViewById(R.id.current_user_bonus);
                     ImageView qr_image = view.findViewById(R.id.bonus_qr_image);
+                    qr_image.setVisibility(View.VISIBLE);
 
                     String qr = response.body().getQrcode();
                     final String pureBase64Encoded = qr.substring(qr.indexOf(",")  + 1);
@@ -222,7 +236,7 @@ public class BonusFragment extends Fragment implements View.OnClickListener {
                                     percent+
                                     "% вам необходимо накопить еще " +
                                     (response.body().getBonus().getSumTo()-response.body().getBonus().getSumFrom()) +
-                                    " руб. По данным на " +
+                                    " руб.\n По данным на " +
                                     getDate()
                     );
                 }
@@ -230,6 +244,7 @@ public class BonusFragment extends Fragment implements View.OnClickListener {
 
             @Override
             public void onFailure(Call<BonusQR> call, Throwable t) {
+                mDialogConfig.dismissDialog();
                 MainActivity.prefConfig.displayToast("Произошла ошибка при получении бонусов");
             }
         });

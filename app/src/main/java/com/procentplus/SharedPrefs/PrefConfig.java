@@ -83,4 +83,14 @@ public class PrefConfig {
     public boolean readIsPartner() {
         return sharedPreferences.getBoolean(context.getString(R.string.pref_isPartner), false);
     }
+
+    public void writePartnerId(Integer id) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putInt(context.getString(R.string.pref_partner_id), id);
+        editor.commit();
+    }
+
+    public int readPartnerId() {
+        return sharedPreferences.getInt(context.getString(R.string.pref_partner_id), 0);
+    }
 }

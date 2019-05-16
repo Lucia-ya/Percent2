@@ -3,23 +3,24 @@ package com.procentplus.activities;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.google.zxing.Result;
+
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
+
 import static android.Manifest.permission.CAMERA;
 
 public class QrCodeScannerActivity extends AppCompatActivity implements ZXingScannerView.ResultHandler {
 
     private static final int REQUEST_CAMERA = 1;
+    private String scanResult;
     private ZXingScannerView mScannerView;
 
     @Override
@@ -32,8 +33,7 @@ public class QrCodeScannerActivity extends AppCompatActivity implements ZXingSca
         int currentapiVersion = android.os.Build.VERSION.SDK_INT;
         if (currentapiVersion >= android.os.Build.VERSION_CODES.M) {
             if (checkPermission()) {
-                Toast.makeText(getApplicationContext(), "Permission already granted", Toast.LENGTH_LONG).show();
-
+                //Toast.makeText(getApplicationContext(), "", Toast.LENGTH_LONG).show();
             } else {
                 requestPermission();
             }
@@ -55,12 +55,12 @@ public class QrCodeScannerActivity extends AppCompatActivity implements ZXingSca
 
                     boolean cameraAccepted = grantResults[0] == PackageManager.PERMISSION_GRANTED;
                     if (cameraAccepted){
-                        Toast.makeText(getApplicationContext(), "Permission Granted, Now you can access camera", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplicationContext(), "Разрешение получено, можно использовать камеру", Toast.LENGTH_LONG).show();
                     }else {
-                        Toast.makeText(getApplicationContext(), "Permission Denied, You cannot access and camera", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplicationContext(), "Разрешение не удалось получить, Вы не можете использовать камеру", Toast.LENGTH_LONG).show();
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                             if (shouldShowRequestPermissionRationale(CAMERA)) {
-                                showMessageOKCancel("You need to allow access to both the permissions",
+                                showMessageOKCancel("Для работы необходимо дать разреншения на работу с камерой",
                                         new DialogInterface.OnClickListener() {
                                             @Override
                                             public void onClick(DialogInterface dialog, int which) {
@@ -83,7 +83,7 @@ public class QrCodeScannerActivity extends AppCompatActivity implements ZXingSca
         new android.support.v7.app.AlertDialog.Builder(QrCodeScannerActivity.this)
                 .setMessage(message)
                 .setPositiveButton("OK", okListener)
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton("Назад", null)
                 .create()
                 .show();
     }
@@ -114,30 +114,34 @@ public class QrCodeScannerActivity extends AppCompatActivity implements ZXingSca
     }
 
     @Override
-    public void handleResult(Result rawResult) {
+    public void handleResult(final Result rawResult) {
 
-        final String result = rawResult.getText();
+        final String[] result = {rawResult.getText()};
         Log.d("QRCodeScanner", rawResult.getText());
         Log.d("QRCodeScanner", rawResult.getBarcodeFormat().toString());
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Scan Result");
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                mScannerView.resumeCameraPreview(QrCodeScannerActivity.this);
-            }
-        });
-        builder.setNeutralButton("Visit", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(result));
-                startActivity(browserIntent);
-            }
-        });
-        builder.setMessage(rawResult.getText());
-        AlertDialog alert1 = builder.create();
-        alert1.show();
+//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//        builder.setTitle("Результат сканирования:");
+//        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialog, int which) {
+                result[0] = rawResult.getText();
+                scanResult = result[0];
+                Intent qr_intent = new Intent(QrCodeScannerActivity.this, PartnerActivity.class);
+                qr_intent.putExtra("qr_data", scanResult);
+                startActivity(qr_intent);
+                finish();
+//            }
+//        });
+//        builder.setNegativeButton("Назад", new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialog, int which) {
+//                mScannerView.resumeCameraPreview(QrCodeScannerActivity.this);
+//            }
+//        });
+        //builder.setMessage(rawResult.getText());
+//        AlertDialog alert1 = builder.create();
+//        alert1.show();
     }
 
 }
